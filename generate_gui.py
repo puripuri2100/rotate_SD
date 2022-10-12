@@ -6,15 +6,6 @@ import generate
 
 
 
-
-
-# 画像を適切に並べる関数
-# デフォルトでは画面に3つ横に並べたいが、縦横比が極端に違う場合は調整する
-# 縦/横 > 2
-def spilit_generate_image_lst(image_lst: list[Element], window_width: int, image_width: int, image_height: int) -> list[list[Element]]:
-    return []
-
-
 # ウィンドウのレイアウト
 layout = [
         [sg.Text("ログ用JSONファイルのpath"), sg.Input(key="-json_path-")],
