@@ -71,16 +71,17 @@ def choice_tags(n: int, tags: list[object], data_json: object, is_weighting: boo
         tag = tags[i]["tag"]
         weights = data_json.get(tag)
         if weights == None or (not is_weighting):
-            lst.append(tag)
+            lst.append((tag, tag))
         else:
             tag_str = tag_to_str_with_weights(tag, weights)
             if tag_str != None:
-                lst.append(tag_str)
+                lst.append((tag, tag_str))
     return lst
 
 
 def generate_prompt(data_json, tags_json, is_weighting, is_nsfw):
     use_tag_lst = []
+    prompt_str_lst = []
     body_data = tags_json["body"]
     face_tags = body_data["face"]
     eyes_tags = body_data["eyes"]
@@ -96,55 +97,68 @@ def generate_prompt(data_json, tags_json, is_weighting, is_nsfw):
     others_tags = tags_json["others"]
     # 顔の情報
     # とりあえずランダムで2要素を選択
-    for tag_str in choice_tags(2, face_tags, data_json, is_weighting):
+    for (tag_str, prompt_str) in choice_tags(2, face_tags, data_json, is_weighting):
         use_tag_lst.append(tag_str)
+        use_tag_lst.append(prompt_str)
     # 目の情報
-    for tag_str in choice_tags(2, eyes_tags, data_json, is_weighting):
+    for (tag_str, prompt_str) in choice_tags(2, eyes_tags, data_json, is_weighting):
         use_tag_lst.append(tag_str)
+        use_tag_lst.append(prompt_str)
     # 耳の情報
-    for tag_str in choice_tags(1, ears_tags, data_json, is_weighting):
+    for (tag_str, prompt_str) in choice_tags(1, ears_tags, data_json, is_weighting):
         use_tag_lst.append(tag_str)
+        use_tag_lst.append(prompt_str)
     # 髪の情報
-    for tag_str in choice_tags(4, hair_tags, data_json, is_weighting):
+    for (tag_str, prompt_str) in choice_tags(4, hair_tags, data_json, is_weighting):
         use_tag_lst.append(tag_str)
+        use_tag_lst.append(prompt_str)
     # 胸の情報
-    for tag_str in choice_tags(2, breasts_tags, data_json, is_weighting):
+    for (tag_str, prompt_str) in choice_tags(2, breasts_tags, data_json, is_weighting):
         use_tag_lst.append(tag_str)
+        use_tag_lst.append(prompt_str)
     # 羽の情報
     # 要らない場合もあるので調節
     # とりあえず2割
     if random.random() < 0.2:
-        for tag_str in choice_tags(1, wings_tags, data_json, is_weighting):
+        for (tag_str, prompt_str) in choice_tags(1, wings_tags, data_json, is_weighting):
             use_tag_lst.append(tag_str)
+            use_tag_lst.append(prompt_str)
     # しっぽの情報
     # 要らない場合もあるので調節
     # とりあえず2割
     if random.random() < 0.2:
-        for tag_str in choice_tags(1, tail_tags, data_json, is_weighting):
+        for (tag_str, prompt_str) in choice_tags(1, tail_tags, data_json, is_weighting):
             use_tag_lst.append(tag_str)
+            use_tag_lst.append(prompt_str)
     # 身体関係のその他の情報
-    for tag_str in choice_tags(5, body_others_tags, data_json, is_weighting):
+    for (tag_str, prompt_str) in choice_tags(5, body_others_tags, data_json, is_weighting):
         use_tag_lst.append(tag_str)
+        use_tag_lst.append(prompt_str)
     # 服の情報
-    for tag_str in choice_tags(3, attire_tags, data_json, is_weighting):
+    for (tag_str, prompt_str) in choice_tags(3, attire_tags, data_json, is_weighting):
         use_tag_lst.append(tag_str)
+        use_tag_lst.append(prompt_str)
     # 物の情報
-    for tag_str in choice_tags(3, objects_tags, data_json, is_weighting):
+    for (tag_str, prompt_str) in choice_tags(3, objects_tags, data_json, is_weighting):
         use_tag_lst.append(tag_str)
+        use_tag_lst.append(prompt_str)
     # 主観情報など
-    for tag_str in choice_tags(3, descriptions_tags, data_json, is_weighting):
+    for (tag_str, prompt_str) in choice_tags(3, descriptions_tags, data_json, is_weighting):
         use_tag_lst.append(tag_str)
+        use_tag_lst.append(prompt_str)
     # その他の情報など
-    for tag_str in choice_tags(3, others_tags, data_json, is_weighting):
+    for (tag_str, prompt_str) in choice_tags(3, others_tags, data_json, is_weighting):
         use_tag_lst.append(tag_str)
+        use_tag_lst.append(prompt_str)
 
     if is_nsfw:
         nsfw_tags = tags_json["nsfw"]
         # NSFW要素
-        for tag_str in choice_tags(10, nsfw_tags, data_json, is_weighting):
+        for (tag_str, prompt_str) in choice_tags(10, nsfw_tags, data_json, is_weighting):
             use_tag_lst.append(tag_str)
+            use_tag_lst.append(prompt_str)
 
-    prompt = ", ".join(use_tag_lst)
+    prompt = ", ".join(prompt_str_lst)
     return (use_tag_lst, prompt)
 
 # ウィンドウのレイアウト
