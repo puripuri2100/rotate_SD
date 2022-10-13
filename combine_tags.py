@@ -275,7 +275,7 @@ while True:
                 like_value = int(values["-likes_input_box-"])
                 window["-likes_slider-"].update(like_value)
             except:
-                window["-likes_input_box_msg-"].update("好み度合いは整数で与えてください")
+                window["-likes_input_box_msg-"].update("好み度合いは整数で与えてください", text_color="yellow")
             if is_generated:
                 is_register_ok = True
                 # JSONファイルのpath
