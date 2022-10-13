@@ -6,3 +6,4 @@ old
 stable
 waifu
 *.json
+!danbooru_tags.json
