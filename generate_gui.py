@@ -1,7 +1,4 @@
 import PySimpleGUI as sg
-import torch
-from diffusers import StableDiffusionPipeline
-from torch import autocast
 import generate
 
 

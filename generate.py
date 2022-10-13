@@ -26,9 +26,9 @@ def path_to_json(path:str) -> list:
     return json_data
 
 
-def write_json_date(path:str, lst:list[object]):
+def write_json_date(path:str, json_data):
     file = open(path, 'w')
-    json.dump(lst, file, indent = 2, ensure_ascii=False)
+    json.dump(json_data, file, indent = 2, ensure_ascii=False)
 
 def make_image_path(model: str, datetime_str: str, is_nsfw: bool) -> str:
     if is_nsfw:
@@ -47,21 +47,22 @@ def data_to_object(model: str, prompt: str, datetime_str: str, is_nsfw: bool, fi
     return obj
 
 
-def generate_stable(is_nsfw: bool, prompt: str, json_data:list[object], n:int, width:int, height:int, seed:int, scale:float):
+def generate_stable(is_nsfw: bool, prompt: str, json_data:list[object], n:int, width:int, height:int, seed:int, scale:float, file_path:str):
     STABLE_DIFFUSION_TOKEN = os.environ["STABLE_DIFFUSION_TOKEN"]
     json_data = path_to_json(json)
     MODEL_ID = "CompVis/stable-diffusion-v1-4"
     pipe = StableDiffusionPipeline.from_pretrained(MODEL_ID, torch_dtype=torch.float32, use_auth_token=STABLE_DIFFUSION_TOKEN)
     pipe.to(DEVICE)
     MODEL = "stable"
-    if isnsfw:
+    if is_nsfw:
         def null_safety(images, **kwargs):
             return images, False
         pipe.safety_checker = null_safety
     with autocast(DEVICE):
         for i in range(n):
             (now_iso, now_file) = make_now_iso_str_and_file_str()
-            file_path = make_image_path(MODEL, now_file, is_nsfw)
+            if file_path == None:
+                file_path = make_image_path(MODEL, now_file, is_nsfw)
             image = pipe(
                 prompt,
                 width=width,
@@ -73,12 +74,11 @@ def generate_stable(is_nsfw: bool, prompt: str, json_data:list[object], n:int, w
             data = data_to_object(MODEL, prompt, now_iso, is_nsfw, file_path)
             json_data.append(data)
             print(f"Image Generated({i})")
-    write_json_date(json, json_data)
     print("All Done")
+    return(json_data)
 
 
-def generate_waifu(is_nsfw: bool, prompt: str, json_data:list[object], n:int, width:int, height:int, seed:int, scale:float):
-    json_data = path_to_json(json)
+def generate_waifu(is_nsfw: bool, prompt: str, json_data:list[object], n:int, width:int, height:int, seed:int, scale:float, file_path:str):
     MODEL_ID = "hakurei/waifu-diffusion"
     pipe = StableDiffusionPipeline.from_pretrained(MODEL_ID, torch_dtype=torch.float32)
     pipe.to(DEVICE)
@@ -90,7 +90,8 @@ def generate_waifu(is_nsfw: bool, prompt: str, json_data:list[object], n:int, wi
     with autocast(DEVICE):
         for i in range(1, n+1):
             (now_iso, now_file) = make_now_iso_str_and_file_str()
-            file_path = make_image_path(MODEL, now_file, is_nsfw)
+            if file_path == None:
+                file_path = make_image_path(MODEL, now_file, is_nsfw)
             image = pipe(
                 prompt,
                 width=width,
@@ -102,8 +103,8 @@ def generate_waifu(is_nsfw: bool, prompt: str, json_data:list[object], n:int, wi
             data = data_to_object(MODEL, prompt, now_iso, is_nsfw, file_path)
             json_data.append(data)
             print(f"Image Generated({i})")
-    write_json_date(json, json_data)
     print("All Done")
+    return(json_data)
 
 
 @click.group()
@@ -121,7 +122,8 @@ def cli():
 @click.option("--scale", default=7.5, type=float, help="スケール")
 def stable(nsfw, prompt, json, n, width, height, seed, scale):
     json_data = path_to_json(json)
-    generate_stable(nsfw, prompt, json_data, n, width, height, seed, scale)
+    new_json_data = generate_stable(nsfw, prompt, json_data, n, width, height, seed, scale, None)
+    write_json_date(json, new_json_data)
 
 
 @cli.command()
@@ -135,7 +137,8 @@ def stable(nsfw, prompt, json, n, width, height, seed, scale):
 @click.option("--scale", default=7.5, type=float, help="スケール")
 def waifu(nsfw, prompt, json, n, width, height, seed, scale):
     json_data = path_to_json(json)
-    generate_waifu(nsfw, prompt, json_data, n, width, height, seed, scale)
+    new_json_data = generate_waifu(nsfw, prompt, json_data, n, width, height, seed, scale, None)
+    write_json_date(json, new_json_data)
 
 
 
