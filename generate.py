@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 # .envファイルを読み込む
 load_dotenv()
 
-STABLE_DIFFUSION_TOKEN = os.environ["STABLE_DIFFUSION_TOKEN"]
 
 DEVICE = "cuda"
 
@@ -48,6 +47,65 @@ def data_to_object(model: str, prompt: str, datetime_str: str, is_nsfw: bool, fi
     return obj
 
 
+def generate_stable(is_nsfw: bool, prompt: str, json_data:list[object], n:int, width:int, height:int, seed:int, scale:float):
+    STABLE_DIFFUSION_TOKEN = os.environ["STABLE_DIFFUSION_TOKEN"]
+    json_data = path_to_json(json)
+    MODEL_ID = "CompVis/stable-diffusion-v1-4"
+    pipe = StableDiffusionPipeline.from_pretrained(MODEL_ID, torch_dtype=torch.float32, use_auth_token=STABLE_DIFFUSION_TOKEN)
+    pipe.to(DEVICE)
+    MODEL = "stable"
+    if isnsfw:
+        def null_safety(images, **kwargs):
+            return images, False
+        pipe.safety_checker = null_safety
+    with autocast(DEVICE):
+        for i in range(n):
+            (now_iso, now_file) = make_now_iso_str_and_file_str()
+            file_path = make_image_path(MODEL, now_file, is_nsfw)
+            image = pipe(
+                prompt,
+                width=width,
+                height=height,
+                seed=seed,
+                scale=scale
+            )["sample"][0]
+            image.save(file_path)
+            data = data_to_object(MODEL, prompt, now_iso, is_nsfw, file_path)
+            json_data.append(data)
+            print(f"Image Generated({i})")
+    write_json_date(json, json_data)
+    print("All Done")
+
+
+def generate_waifu(is_nsfw: bool, prompt: str, json_data:list[object], n:int, width:int, height:int, seed:int, scale:float):
+    json_data = path_to_json(json)
+    MODEL_ID = "hakurei/waifu-diffusion"
+    pipe = StableDiffusionPipeline.from_pretrained(MODEL_ID, torch_dtype=torch.float32)
+    pipe.to(DEVICE)
+    MODEL = "waifu"
+    if is_nsfw:
+        def null_safety(images, **kwargs):
+            return images, False
+        pipe.safety_checker = null_safety
+    with autocast(DEVICE):
+        for i in range(1, n+1):
+            (now_iso, now_file) = make_now_iso_str_and_file_str()
+            file_path = make_image_path(MODEL, now_file, is_nsfw)
+            image = pipe(
+                prompt,
+                width=width,
+                height=height,
+                seed=seed,
+                scale=scale
+            )["sample"][0]
+            image.save(file_path)
+            data = data_to_object(MODEL, prompt, now_iso, is_nsfw, file_path)
+            json_data.append(data)
+            print(f"Image Generated({i})")
+    write_json_date(json, json_data)
+    print("All Done")
+
+
 @click.group()
 def cli():
     pass
@@ -63,31 +121,7 @@ def cli():
 @click.option("--scale", default=7.5, type=float, help="スケール")
 def stable(nsfw, prompt, json, n, width, height, seed, scale):
     json_data = path_to_json(json)
-    MODEL_ID = "CompVis/stable-diffusion-v1-4"
-    pipe = StableDiffusionPipeline.from_pretrained(MODEL_ID, torch_dtype=torch.float32, use_auth_token=STABLE_DIFFUSION_TOKEN)
-    pipe.to(DEVICE)
-    MODEL = "stable"
-    if nsfw:
-        def null_safety(images, **kwargs):
-            return images, False
-        pipe.safety_checker = null_safety
-    with autocast(DEVICE):
-        for i in range(n):
-            (now_iso, now_file) = make_now_iso_str_and_file_str()
-            file_path = make_image_path(MODEL, now_file, nsfw)
-            image = pipe(
-                prompt,
-                width=width,
-                height=height,
-                seed=seed,
-                scale=scale
-            )["sample"][0]
-            image.save(file_path)
-            data = data_to_object(MODEL, prompt, now_iso, nsfw, file_path)
-            json_data.append(data)
-            print(f"Image Generated({i})")
-    write_json_date(json, json_data)
-    print("All Done")
+    generate_stable(nsfw, prompt, json_data, n, width, height, seed, scale)
 
 
 @cli.command()
@@ -101,31 +135,8 @@ def stable(nsfw, prompt, json, n, width, height, seed, scale):
 @click.option("--scale", default=7.5, type=float, help="スケール")
 def waifu(nsfw, prompt, json, n, width, height, seed, scale):
     json_data = path_to_json(json)
-    MODEL_ID = "hakurei/waifu-diffusion"
-    pipe = StableDiffusionPipeline.from_pretrained(MODEL_ID, torch_dtype=torch.float32)
-    pipe.to(DEVICE)
-    MODEL = "waifu"
-    if nsfw:
-        def null_safety(images, **kwargs):
-            return images, False
-        pipe.safety_checker = null_safety
-    with autocast(DEVICE):
-        for i in range(1, n+1):
-            (now_iso, now_file) = make_now_iso_str_and_file_str()
-            file_path = make_image_path(MODEL, now_file, nsfw)
-            image = pipe(
-                prompt,
-                width=width,
-                height=height,
-                seed=seed,
-                scale=scale
-            )["sample"][0]
-            image.save(file_path)
-            data = data_to_object(MODEL, prompt, now_iso, nsfw, file_path)
-            json_data.append(data)
-            print(f"Image Generated({i})")
-    write_json_date(json, json_data)
-    print("All Done")
+    generate_waifu(nsfw, prompt, json_data, n, width, height, seed, scale)
+
 
 
 if __name__ == "__main__":

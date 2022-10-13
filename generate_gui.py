@@ -121,52 +121,23 @@ while True:
             # 生成条件が整った場合にのみ生成を開始する
             is_err = False
             json_file_path = values["-json_path-"]
-            nsfw = values["-is_nsfw-"]
-            if values["-model_stable-"]:
-                MODEL_ID = "CompVis/stable-diffusion-v1-4"
-                MODEL = "stable"
-                pipe = StableDiffusionPipeline.from_pretrained(MODEL_ID, torch_dtype=torch.float32, use_auth_token=generate.STABLE_DIFFUSION_TOKEN)
-            elif values["-model_waifu-"]:
-                MODEL_ID = "hakurei/waifu-diffusion"
-                MODEL = "waifu"
-                pipe = StableDiffusionPipeline.from_pretrained(MODEL_ID, torch_dtype=torch.float32)
-            else:
-                pass
-            json_data = generate.path_to_json(json_file_path)
-            pipe.to(generate.DEVICE)
+            is_nsfw = values["-is_nsfw-"]
             generate_n = int(values["-generate_n-"])
-            if nsfw:
-                def null_safety(images, **kwargs):
-                    return images, False
-                pipe.safety_checker = null_safety
-            with autocast(generate.DEVICE):
-                for i in range(1, generate_n + 1):
-                    try:
-                        (now_iso, now_file) = generate.make_now_iso_str_and_file_str()
-                        file_path = generate.make_image_path(MODEL, now_file, nsfw)
-                        image = pipe(
-                            prompt,
-                            width=int(values["-image_width-"]),
-                            height=int(values["-image_height-"]),
-                            seed=generate_seed_value,
-                            scale=float(values["-generate_scale-"])
-                        )["sample"][0]
-                        image.save(file_path)
-                        data = generate.data_to_object(MODEL, prompt, now_iso, nsfw, file_path)
-                        json_data.append(data)
-                        window["-generate_log_msg-"].update(f"Image Generated({i}/{generate_n})")
-                    except _ as e:
-                        window["-generate_log_msg-"].update(f"Error at {i}/{generate_n}")
-                        is_err = True
-                        print(e)
-                        break
-                    except:
-                        window["-generate_log_msg-"].update(f"Error at {i}/{generate_n}")
-                        is_err = True
-                        break
-            generate.write_json_date(json_file_path, json_data)
-            if not is_err:
-                window["-generate_log_msg-"].update(f"\nAll Done")
+            width=int(values["-image_width-"])
+            height=int(values["-image_height-"])
+            scale=float(values["-generate_scale-"])
+            json_data = generate.path_to_json(json_file_path)
+            try:
+                if values["-model_stable-"]:
+                    generate.generate_stable(is_nsfw, prompt, json_data, generate_n, width, height, generate_seed_value, scale)
+                elif values["-model_waifu-"]:
+                    generate.generate_waifu(is_nsfw, prompt, json_data, generate_n, width, height, generate_seed_value, scale)
+                else:
+                    pass
+                window["-generate_log_msg-"].update("All Done")
+            except:
+                window["-generate_log_msg-"].update("Err")
+
 
 # ウィンドウ終了処理
 window.close()
